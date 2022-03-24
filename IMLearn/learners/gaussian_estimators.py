@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import numpy as np
-from numpy.linalg import inv, det, slogdet
 
 
 class UnivariateGaussian:
     """
     Class for univariate Gaussian Distribution Estimator
     """
+
     def __init__(self, biased_var: bool = False) -> UnivariateGaussian:
         """
         Estimator for univariate Gaussian mean and variance parameters
@@ -51,7 +52,8 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+        self.mu_ = np.mean(X)
+        self.var_ = np.var(X)
 
         self.fitted_ = True
         return self
@@ -75,8 +77,10 @@ class UnivariateGaussian:
         ValueError: In case function was called prior fitting the model
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+            raise ValueError(
+                "Estimator must first be fitted before calling `pdf` function")
+        return ((1. / np.sqrt(2 * np.pi * self.var_)) *
+                np.exp(-(X - self.mu_) ** 2 / (2 * self.var_)))
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -97,13 +101,16 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        return np.float(
+            np.sum(np.log(2 * np.pi * (sigma ** 2)) / 2 + ((X - mu) ** 2) / (
+                    2 * (sigma ** 2))))
 
 
 class MultivariateGaussian:
     """
     Class for multivariate Gaussian Distribution Estimator
     """
+
     def __init__(self):
         """
         Initialize an instance of multivariate Gaussian estimator
@@ -143,7 +150,8 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+        self.mu_ = np.mean(X, axis=0)
+        self.cov_ = np.cov(X, rowvar=False)
 
         self.fitted_ = True
         return self
@@ -167,11 +175,17 @@ class MultivariateGaussian:
         ValueError: In case function was called prior fitting the model
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+            raise ValueError(
+                "Estimator must first be fitted before calling `pdf` function")
+        return (1. / (
+            np.sqrt((2 * np.pi) ** X.ndim * np.linalg.det(self.cov_))) *
+                np.exp(
+                    -(np.linalg.solve(self.cov_, X - self.mu_).T.dot(
+                        X - self.mu_)) / 2))
 
     @staticmethod
-    def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
+    def log_likelihood(mu: np.ndarray, cov: np.ndarray,
+                       X: np.ndarray) -> float:
         """
         Calculate the log-likelihood of the data under a specified Gaussian model
 
@@ -189,4 +203,19 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated over all input data and under given parameters of Gaussian
         """
-        raise NotImplementedError()
+        # d = X.shape
+        #
+        # return np.float(np.sum(  # for m samples
+        #     np.apply_along_axis(  # for d features
+        #         -0.5 * (d * np.log(2 * np.pi)) + np.log(
+        #             np.linalg.det(cov)) + (X - mu).T.dot(np.linalg.inv(
+        #             cov)).dot(X - mu)
+        #     )
+        # )) slow
+
+        residuals = X - mu
+        loglikelihood = -0.5 * (
+        np.log(np.linalg.det(cov))
+        + np.einsum('...j,jk,...k', residuals, np.linalg.inv(cov), residuals)
+        + len(mu) * np.log(2 * np.pi))
+        return np.sum(loglikelihood, dtype= np.float)
