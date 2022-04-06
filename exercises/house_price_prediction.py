@@ -1,12 +1,12 @@
-from IMLearn.utils import split_train_test
-from IMLearn.learners.regressors import LinearRegression
-
 from typing import NoReturn
+
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 import plotly.io as pio
+
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 pio.templates.default = "simple_white"
 
 
@@ -23,10 +23,28 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    raise NotImplementedError()
+    df = pd.read_csv(filename).dropna().drop_duplicates()
+    for feature in ["id", "date", "lat", "long"]:
+        df = df.drop(labels=feature, axis=1)
+
+    df["zipcode"] = df["zipcode"].astype(int)  # some of them as string
+
+    df = df.loc[
+        (df[['price', "floors", 'condition', 'grade', 'sqft_above', 'yr_built',
+             'sqft_living15', 'sqft_lot15']] > 0).all(axis=1)]
+    df = df.loc[(df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot',
+                     'view', 'waterfront', 'sqft_basement',
+                     'yr_renovated']] >= 0).all(
+        axis=1)]
+    df = df.loc[df['grade'] < 14]
+    df = df.loc[df['condition'] <= 5]
+    df = df.loc[df['waterfront'] <= 1]
+
+    return df.drop('price', axis=1), df['price'].tolist()
 
 
-def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
+def feature_evaluation(X: pd.DataFrame, y: pd.Series,
+                       output_path: str = ".") -> NoReturn:
     """
     Create scatter plot between each feature and the response.
         - Plot title specifies feature name
@@ -43,19 +61,35 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
-    raise NotImplementedError()
+    x1 = X["sqft_living"].values
+    x2 = X["zipcode"].values
+
+    p1 = ((np.cov(x1, y))/(np.std(x1)*np.std(y)))[0][1]
+    p2 = ((np.cov(x2, y))/(np.std(x2)*np.std(y)))[0][1]
+
+    fig = make_subplots(rows=1, cols=2, start_cell="bottom-left")
+
+    fig.add_traces([go.Scatter(x=x1, y=y, mode="markers"),
+                go.Scatter(x=x2, y=y, mode="markers")],rows=[1,1], cols=[1,2])
+    fig.update_xaxes(title_text=f"Rsqft_living, p={p1}", row=1, col=1)
+    fig.update_xaxes(title_text=f"zipcode, p={p2}", row=1, col=2)
+    fig.update_yaxes(title_text="Prices")
+    fig.show()
+
+
+
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    raise NotImplementedError()
+    X, y = load_data("C:\CS\IML\IML.HUJI\datasets\house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    raise NotImplementedError()
+    feature_evaluation(X, y)
 
     # Question 3 - Split samples into training- and testing sets.
-    raise NotImplementedError()
+    # raise NotImplementedError()
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -64,4 +98,4 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    raise NotImplementedError()
+    # raise NotImplementedError()
