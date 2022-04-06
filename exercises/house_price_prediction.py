@@ -2,10 +2,12 @@ from typing import NoReturn
 
 import numpy as np
 import pandas as pd
-import plotly.io as pio
-
 import plotly.graph_objects as go
+import plotly.io as pio
 from plotly.subplots import make_subplots
+
+from IMLearn.learners.regressors import linear_regression
+from IMLearn.utils import utils
 
 pio.templates.default = "simple_white"
 
@@ -40,7 +42,7 @@ def load_data(filename: str):
     df = df.loc[df['condition'] <= 5]
     df = df.loc[df['waterfront'] <= 1]
 
-    return df.drop('price', axis=1), df['price'].tolist()
+    return df.drop('price', axis=1), df['price']
 
 
 def feature_evaluation(X: pd.DataFrame, y: pd.Series,
@@ -64,20 +66,18 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
     x1 = X["sqft_living"].values
     x2 = X["zipcode"].values
 
-    p1 = ((np.cov(x1, y))/(np.std(x1)*np.std(y)))[0][1]
-    p2 = ((np.cov(x2, y))/(np.std(x2)*np.std(y)))[0][1]
+    p1 = ((np.cov(x1, y)) / (np.std(x1) * np.std(y)))[0][1]
+    p2 = ((np.cov(x2, y)) / (np.std(x2) * np.std(y)))[0][1]
 
     fig = make_subplots(rows=1, cols=2, start_cell="bottom-left")
 
     fig.add_traces([go.Scatter(x=x1, y=y, mode="markers"),
-                go.Scatter(x=x2, y=y, mode="markers")],rows=[1,1], cols=[1,2])
+                    go.Scatter(x=x2, y=y, mode="markers")], rows=[1, 1],
+                   cols=[1, 2])
     fig.update_xaxes(title_text=f"Rsqft_living, p={p1}", row=1, col=1)
     fig.update_xaxes(title_text=f"zipcode, p={p2}", row=1, col=2)
     fig.update_yaxes(title_text="Prices")
     fig.show()
-
-
-
 
 
 if __name__ == '__main__':
@@ -86,10 +86,10 @@ if __name__ == '__main__':
     X, y = load_data("C:\CS\IML\IML.HUJI\datasets\house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    feature_evaluation(X, y)
+    # feature_evaluation(X, y)
 
     # Question 3 - Split samples into training- and testing sets.
-    # raise NotImplementedError()
+    xTrain, yTrain, xTest, yTest = utils.split_train_test(X, y, 0.75)
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -98,4 +98,43 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    # raise NotImplementedError()
+    x = np.linspace(10, 100, 1)
+    losses, preds, avgLoss= [], [], []
+    lR = linear_regression.LinearRegression()
+    for p in range(10, 100):
+        for _ in range(10):
+            samplesP = xTrain.sample(frac=p / 100)
+            lR.fit(samplesP.to_numpy(), y[samplesP.index].to_numpy())
+            predict = lR.predict(xTest.to_numpy())
+            preds.append(predict)
+            loss = lR.loss(xTest.to_numpy(), yTest.to_numpy())
+            losses.append(loss)
+
+        avgLoss.append(np.average(losses))
+        losses = []
+
+    lR.fit(xTrain.to_numpy(), yTrain.to_numpy())
+    predict = lR.predict(xTrain.to_numpy())
+    preds.append(predict)
+    loss = lR.loss(xTest.to_numpy(), yTest.to_numpy())
+    losses.append(loss)
+    avgLoss.append(np.average(losses))
+
+    fig = go.Figure(
+        data=[
+            go.Scatter(x=list(range(1, len(avgLoss))), y=avgLoss,
+                       mode="markers+lines",
+                       name="average loss"),
+            go.Scatter(x=list(range(1, len(avgLoss))),
+                       y=meanss - 2 * stdss, fill=None, mode="lines",
+                       line=dict(color="lightgrey"), showlegend=False),
+            go.Scatter(x=list(range(1, len(avgLoss))),
+                       y=meanss + 2 * stdss, fill='tonexty',
+                       mode="lines", line=dict(color="lightgrey"),
+                       showlegend=False)],
+        layout=go.Layout(title_text="MSE loss with mean...",
+                         xaxis={"title": "size of traning data set"},
+                         yaxis={"title": "MSE loss"}))
+
+    #
+    fig.write_image("mse.png")
