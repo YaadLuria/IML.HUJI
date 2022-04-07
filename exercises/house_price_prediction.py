@@ -77,7 +77,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
     fig.update_xaxes(title_text=f"Rsqft_living, p={p1}", row=1, col=1)
     fig.update_xaxes(title_text=f"zipcode, p={p2}", row=1, col=2)
     fig.update_yaxes(title_text="Prices")
-    fig.show()
+    fig.write_image(output_path)
 
 
 if __name__ == '__main__':
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     X, y = load_data("C:\CS\IML\IML.HUJI\datasets\house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    # feature_evaluation(X, y)
+    feature_evaluation(X, y, "3.1.2 PearsonCorrelation.png")
 
     # Question 3 - Split samples into training- and testing sets.
     xTrain, yTrain, xTest, yTest = utils.split_train_test(X, y, 0.75)
@@ -99,42 +99,43 @@ if __name__ == '__main__':
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
     x = np.linspace(10, 100, 1)
-    losses, preds, avgLoss= [], [], []
+    losses, avgLoss = [], []
     lR = linear_regression.LinearRegression()
+    mean_pred, std_pred = [], []
     for p in range(10, 100):
         for _ in range(10):
             samplesP = xTrain.sample(frac=p / 100)
             lR.fit(samplesP.to_numpy(), y[samplesP.index].to_numpy())
             predict = lR.predict(xTest.to_numpy())
-            preds.append(predict)
             loss = lR.loss(xTest.to_numpy(), yTest.to_numpy())
             losses.append(loss)
 
         avgLoss.append(np.average(losses))
+        mean_pred.append(np.mean(losses))
+        std_pred.append(np.std(losses))
         losses = []
 
     lR.fit(xTrain.to_numpy(), yTrain.to_numpy())
     predict = lR.predict(xTrain.to_numpy())
-    preds.append(predict)
     loss = lR.loss(xTest.to_numpy(), yTest.to_numpy())
-    losses.append(loss)
-    avgLoss.append(np.average(losses))
-
+    avgLoss.append(loss)
+    mean_pred = np.array(mean_pred)
+    std_pred = np.array(std_pred)
     fig = go.Figure(
         data=[
             go.Scatter(x=list(range(1, len(avgLoss))), y=avgLoss,
                        mode="markers+lines",
                        name="average loss"),
             go.Scatter(x=list(range(1, len(avgLoss))),
-                       y=meanss - 2 * stdss, fill=None, mode="lines",
+                       y=mean_pred - 2 * std_pred, fill=None, mode="lines",
                        line=dict(color="lightgrey"), showlegend=False),
             go.Scatter(x=list(range(1, len(avgLoss))),
-                       y=meanss + 2 * stdss, fill='tonexty',
+                       y=mean_pred + 2 * std_pred, fill='tonexty',
                        mode="lines", line=dict(color="lightgrey"),
                        showlegend=False)],
-        layout=go.Layout(title_text="MSE loss with mean...",
-                         xaxis={"title": "size of traning data set"},
+        layout=go.Layout(title_text="MSE loss to size of training data",
+                         xaxis={"title": "size of training data set"},
                          yaxis={"title": "MSE loss"}))
 
     #
-    fig.write_image("mse.png")
+    fig.write_image("3.1.4 mse.png")
