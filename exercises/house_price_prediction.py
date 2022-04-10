@@ -9,6 +9,8 @@ from plotly.subplots import make_subplots
 from IMLearn.learners.regressors import linear_regression
 from IMLearn.utils import utils
 
+from IMLearn.metrics import loss_functions
+
 pio.templates.default = "simple_white"
 
 
@@ -137,5 +139,4 @@ if __name__ == '__main__':
                          xaxis={"title": "size of training data set"},
                          yaxis={"title": "MSE loss"}))
 
-    #
     fig.write_image("3.1.4 mse.png")

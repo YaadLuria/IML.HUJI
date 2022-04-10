@@ -4,6 +4,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
 
+from IMLearn.learners.regressors.polynomial_fitting import PolynomialFitting
+from IMLearn.utils import utils
+
 pio.templates.default = "simple_white"
 
 
@@ -66,6 +69,21 @@ def question3(data: pd.DataFrame):
     fig.show()
 
 
+def question4(data: pd.DataFrame):
+    data = data[data['Country'] == 'Israel']
+    data.sample(frac=1)
+    xTrain, yTrain, xTest, yTest = utils.split_train_test(data['DayOfYear'],
+                                                          data['Temp'], 0.75)
+    losses = []
+    for k in range(11):
+        pF = PolynomialFitting(k)
+        pF.fit(xTrain.to_numpy(), yTrain.to_numpy())
+        losses.append(pF.loss(xTest.to_numpy(), yTest.to_numpy()))
+
+    print(losses)
+    px.bar(x=range(11), y=losses).write_image("3.2.4 loss for k")
+
+
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of city temperature dataset
@@ -76,10 +94,10 @@ if __name__ == '__main__':
     # question2(data)
 
     # Question 3 - Exploring differences between countries
-    question3(data)
+    #question3(data)
 
     # Question 4 - Fitting model for different values of `k`
-    # raise NotImplementedError()
+    question4(data)
 
     # Question 5 - Evaluating fitted model on different countries
     # raise NotImplementedError()
