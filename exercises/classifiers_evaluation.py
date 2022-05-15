@@ -46,12 +46,23 @@ def run_perceptron():
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
     """
     Draw an ellipse centered at given location and according to specified covariance matrix
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/main
     Parameters
     ----------
     mu : ndarray of shape (2,)
         Center of ellipse
+<<<<<<< HEAD
     cov: ndarray of shape (2,2)
         Covariance of Gaussian
+=======
+
+    cov: ndarray of shape (2,2)
+        Covariance of Gaussian
+
+>>>>>>> upstream/main
     Returns
     -------
         scatter: A plotly trace object of the ellipse
