@@ -34,7 +34,6 @@ class Perceptron(BaseEstimator):
     def __init__(self,
                  include_intercept: bool = True,
                  max_iter: int = 1000,
-                 callback: Callable[[Perceptron, np.ndarray, int], None] = default_callback):
                  callback: Callable[
                      [Perceptron, np.ndarray, int], None] = default_callback):
         """
