@@ -38,24 +38,71 @@ def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     return X, y
 
 
-def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=500):
-    (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
+def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
+                              test_size=500):
+    (train_X, train_y), (test_X, test_y) = generate_data(train_size,
+                                                         noise), generate_data(
+        test_size, noise)
 
     # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
-
+    adaBoost = AdaBoost(lambda: DecisionStump(), n_learners)
+    adaBoost.fit(train_X, train_y)
+    train_err = [adaBoost.partial_loss(train_X, train_y, t)
+                 for t in range(1, n_learners)]
+    test_err = [adaBoost.partial_loss(test_X, test_y, t)
+                for t in range(1, n_learners)]
+    go.Figure([go.Scatter(x=np.arange(1, n_learners), y=train_err,
+                          mode='lines', name='train error'),
+               go.Scatter(x=np.arange(1, n_learners), y=test_err,
+                          mode='lines', name='test '
+                                             'error')]).update_layout(
+        title=f"error of train and test as number of learners with "
+              f"noise {noise}").show()
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
-    lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    raise NotImplementedError()
+    lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X,
+                                                               test_X].max(
+        axis=0)]).T + np.array([-.1, .1])
+    plots = make_subplots(2, 2, subplot_titles=[f"{t} learners" for t in T])
+
+    fig = go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers",
+                     showlegend=False,
+                     marker=dict(color=test_y))
+    row = [1, 1, 2, 2]
+    col = [1, 2, 1, 2]
+    for i, t in enumerate(T):
+        plots.add_traces([decision_surface(lambda x:
+                                           adaBoost.partial_predict(x, t),
+                                           lims[0], lims[1],
+                                           showscale=False), fig], rows=row[i],
+                         cols=col[i])
+    plots.update_layout(title=f"decision surfaces with noise {noise}").show()
 
     # Question 3: Decision surface of best performing ensemble
-    raise NotImplementedError()
+    min_err = np.argmin(test_err) + 1
+    accuracy = 1 - test_err[min_err - 1]
+
+    go.Figure([decision_surface(lambda x:
+                                adaBoost.partial_predict(x, min_err),
+                                lims[0], lims[1],
+                                showscale=False), fig]).update_layout(
+        title=f"Decision surface of best performing ensemble is {min_err} "
+              f"with accuracy of {accuracy}").show()
 
     # Question 4: Decision surface with weighted samples
-    raise NotImplementedError()
+    go.Figure([decision_surface(adaBoost.predict,
+                                lims[0], lims[1],
+                                showscale=False),
+               go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers",
+                          showlegend=False,
+                          marker=dict(color=train_y, size=adaBoost.D_ / np.max(adaBoost.D_) * 5, colorscale=[
+                              custom[0], custom[1]],
+                                      symbol=class_symbols[train_y.astype(
+                                          int)]))]).update_layout(
+        title=f"Decision surface with weighted samples and noise {noise}").show()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    #fit_and_evaluate_adaboost(0)
+    fit_and_evaluate_adaboost(0.4)

@@ -22,10 +22,7 @@ class Perceptron(BaseEstimator):
     coefs_: ndarray of shape (n_features,) or (n_features+1,)
         Coefficients vector fitted by Perceptron algorithm. To be set in
         `Perceptron.fit` function.
-<<<<<<< HEAD
 =======
-
->>>>>>> upstream/main
     callback_: Callable[[Perceptron, np.ndarray, int], None]
             A callable to be called after each update of the model while fitting to given data
             Callable function should receive as input a Perceptron instance, current sample and current response
@@ -113,12 +110,4 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-        raise NotImplementedError()
-=======
-        raise NotImplementedError()
->>>>>>> upstream/main
-=======
         return misclassification_error(y, self.predict(X))
->>>>>>> Stashed changes
