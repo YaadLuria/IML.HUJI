@@ -30,10 +30,13 @@ class Perceptron(BaseEstimator):
             A callable to be called after each update of the model while fitting to given data
             Callable function should receive as input a Perceptron instance, current sample and current response
     """
+
     def __init__(self,
                  include_intercept: bool = True,
                  max_iter: int = 1000,
                  callback: Callable[[Perceptron, np.ndarray, int], None] = default_callback):
+                 callback: Callable[
+                     [Perceptron, np.ndarray, int], None] = default_callback):
         """
         Instantiate a Perceptron classifier
         Parameters
@@ -66,7 +69,19 @@ class Perceptron(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
-        raise NotImplementedError()
+        self.fitted_ = True
+        if self.include_intercept_:
+            X = np.hstack((X, np.ones((X.shape[0], 1))))
+        self.coefs_ = np.zeros(X.shape[1])
+        for _ in range(self.max_iter_):
+            exist = y*(X @ self.coefs_) <= 0
+            if np.any(exist):
+                index = np.argwhere(exist)[0][0]
+                self.coefs_ = self.coefs_ + X[index] * y[index]
+            else:
+                break
+            self.callback_(self)
+
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -80,7 +95,9 @@ class Perceptron(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.hstack((X, np.ones((X.shape[0], 1))))
+        return np.sign(X @ self.coefs_)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -97,8 +114,12 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
+<<<<<<< Updated upstream
 <<<<<<< HEAD
         raise NotImplementedError()
 =======
         raise NotImplementedError()
 >>>>>>> upstream/main
+=======
+        return misclassification_error(y, self.predict(X))
+>>>>>>> Stashed changes
