@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from typing import NoReturn
-from ...base import BaseEstimator
+
 import numpy as np
+
+from ...base import BaseEstimator
 
 
 class RidgeRegression(BaseEstimator):
@@ -11,7 +14,8 @@ class RidgeRegression(BaseEstimator):
     Solving Ridge Regression optimization problem
     """
 
-    def __init__(self, lam: float, include_intercept: bool = True) -> RidgeRegression:
+    def __init__(self, lam: float,
+                 include_intercept: bool = True) -> RidgeRegression:
         """
         Initialize a ridge regression model
 
@@ -32,7 +36,6 @@ class RidgeRegression(BaseEstimator):
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
-
 
         """
         Initialize a ridge regression model
@@ -59,7 +62,12 @@ class RidgeRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.insert(X, 0, 1, axis=1)
+
+        u, s, v = np.linalg.svd(X, full_matrices=False)
+        cov = s / (np.square(s) + self.lam_)
+        self.coefs_ = v.T @ np.diag(cov) @ u.T @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -75,7 +83,9 @@ class RidgeRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if not self.include_intercept_:
+            return X @ self.coefs_
+        return np.insert(X, 0, 1, axis=1) @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -94,4 +104,5 @@ class RidgeRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        raise NotImplementedError()
+        from IMLearn.metrics import mean_square_error
+        return mean_square_error(y, self.predict(X))
